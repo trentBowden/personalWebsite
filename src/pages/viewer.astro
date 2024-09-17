@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>D3-Celestial Starmap</title>
+    <script type="text/javascript" src="/d3-data/lib/d3.min.js"></script>
+    <script type="text/javascript" src="/d3-data/lib/d3.geo.projection.min.js"
+    ></script>
+    <script type="text/javascript" src="/d3-data/celestial.min.js"></script>
+    <link rel="stylesheet" href="/d3-data/celestial.css" />
+  </head>
+  <body>
+    <div style="overflow:hidden;"><div id="celestial-map"></div></div>
+    <div id="celestial-form"></div>
+
+    <script type="text/javascript">
+      Celestial.display({
+        disableAnimations: false,
+        form: true,
+        formFields: { download: true },
+        datapath: "/d3-data/data/",
+        stars: { propername: true },
+      });
+    </script>
+  </body>
+</html>

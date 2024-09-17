@@ -1,0 +1,164 @@
+---
+title: 'The one with the open endpoints'
+description: "Friends don't let friends make front page"
+pubDate: 'Sep 17 2024'
+heroImage: '/dribl/friends.webp'
+---
+What would you do if you found a company was careless with its data? Like.. the personal data of over a million people kind of careless?
+
+You're faced with either reporting them (with unknown consequences to you and them) or letting them sweep it under the rug.
+
+In August 2024, I stumbled upon two open API endpoints of an Australian-wide Sports-team management app, all while just trying to get player stats.
+
+Here's how it all happened.
+
+<img
+  src="/dribl/nathanforyou.jpg"
+  title="Nathan for you"
+  alt="A picture of Nathan Fielder, who graduated from one of Canada's top business schools with really good grades. Now he's using his knowledge to help struggling small business owners make it in this competitive world."
+/>
+
+##### The plan? Use their back-end to catch when teams are stacking players.
+
+Clubs often have teams in higher and lower leagues, with players moving up or down each week as coaches see fit. Against a difficult team, clubs may stack their team with a few more than the rules allow, but the app makes it time-consuming to catch.
+
+Down to the basement with a black hoodie and 30 Mountain Dews, time to put on some huge headphones and listen to ASMR while we answer:
+
+##### _Given a teamsheet, how many players are from higher divisions?_
+
+<img
+  src="/dribl/wade.jpg"
+  title="Wade, the programmer from Kim Possible"
+  alt="A picture of Wade, from Kim Possible."
+/>
+_At this point in the story, I'm fully trusting of their software practices. Oh to be young._
+
+##### Question one: Can we even get data?
+
+The mobile app feels more feature-rich than the web app, so an on-device packet sniffer is employed. Encrypted traffic, no good. Strike one. (*1)
+
+Their support chat says no Public API exists. Strike two.
+
+Luckily, requests from the web app only require a bearer token, and show enough promise to do what we want. Bingo!
+
+With the trusty Chrome network tab open, I've now got a directory of all useful API calls. And they all return successfully when requested by a local script. We're in the data business, baby!
+
+##### Here's where my trust in the world started breaking down.
+<img
+  src="/dribl/ncis.jpg"
+  title="Abby Sciuto and Tim McGee"
+  alt="A picture of Abby and Tim from NCIS watching a hack go down."
+/>
+_If you've been getting my references so far, you have an unused VGA cable somewhere in the house. I'm telling you now, it'll never be used. You've come too far to go back to playing Need for Speed in 800x600._
+
+To catch the player, we need to see them on a teamsheet. For a teamsheet, we need an opposition team ID and a match ID:
+
+We look to the `/results` endpoint, which lists all IDs of completed games. We get over 7000 records here, because the average Joe schmuck is permitted to see results from any game.
+
+<img
+  src="/dribl/results.png"
+  title="Endpoint results"
+  alt="A screenshot of chrome's network tab showing sensitive data in a payload from a regular endpoint."
+/>
+
+So we can hit the `matchsheet-members` endpoint to get info on the players of each match. This endpoint requires you to be signed up as a coach.
+
+##### Hold on. Is that a phone number?
+* First name, Middle name, last name: _Public info_
+* Federation number: _Limited to authorised users_
+* Personal email and mobile number: **Not meant to have this.**
+
+<img
+  src="/dribl/members.png"
+  title="Endpoint results"
+  alt="A screenshot of chrome's network tab showing sensitive data in a payload from a regular endpoint."
+/>
+
+_I'm still within Chrome at this point._
+
+As a member of this league, I can see teamsheets for every team we've versed. This means the names, emails and phone numbers of every player in the league are being sent to anyone logged in and browsing a teamsheet...
+
+##### Contacting the app.
+Nobody wants to be the next Optus. I contact the app, they respond within an hour or two saying it's been patched!
+
+<img
+  src="/dribl/driblresponse0.png"
+  title="Response email"
+  alt="A screenshot of an email I received from the app developers when I initially contacted them about sensitive data in a regular payload. It says they have fixed the problem."
+/>
+_Hooray! This means they care! Right?_
+
+<img
+  src="/dribl/meme.jpg"
+  title="Star Wars meme"
+  alt="Star wars meme: We've removed sensitive data from the response. You'll check all endpoints right?... You'll check all endpoints, right?"
+/>
+
+##### Finding something even worse.
+I came back to this a week later, looking for stats on both the teams I coach and play in. From the coach admin portal, I can hit the /members endpoint to retrieve all members in MY club.
+
+Have a look at the URL and take a guess what we'll tinker with next:
+
+```
+https://api.<Some App>.com/api/members
+?page=1
+&tenant_id= <id>
+&season_id= <id>
+&club_id= <id>
+```
+
+_Trent!_ You exclaim. You couldn't possibly guess other tenant IDs/Club IDs!? Surely they are UUIDs.
+
+Oh to have such faith.
+
+**_All IDs in this system are incremented numbers._** Leaving them open to an enumeration on any data model.
+
+Hitting the /tenants endpoint with id = n (n= 1…1000) will retrieve the ID and name, which can be combined with another endpoint to retrieve contact information for all tenants.
+
+<img
+  src="/dribl/tenants.png"
+  title="Tenants"
+  alt="A result from incrementing Ids on a GET endpoint to retrieve all tenants"
+/>
+
+_If you're wondering, I didn't hit a rate limiter_
+
+This `/members` endpoint provides me with not only the phone number, and personal email from before, but also the **profile picture, date of birth and home address of each user. Regardless of if I should have permission to them or not.**
+
+Change the club ID? _Theoretically_ Get data for every single member assigned to that club.
+
+### There are over a million users on this platform, including minors.
+
+According to [UpGuard](https://www.upguard.com/blog/biggest-data-breaches-australia), a coordinated effort for this would land at the 5th largest (publicly known) breach in Australia.
+
+Do I email the developers again, so they can fix it, and sweep this under the rug? Or contact someone in a higher position in the digital world, with unknown consequence on either side?
+
+In university, ethical questions like "would you delete accidentally-sent emails from a friend's account if your boss told you to?" were great talking points, but are detached from genuine circumstances.
+
+On one side, I like this app. It saves me time and helps coordinate those million+ people to play the game they love.
+
+On the other, I can't believe a company can reach millions of users and Australia-wide success without being scrutinised enough to have checked these endpoints. 
+
+Everything I've shown today can be done within a browser. In the first instance, sensitive data was being sent to clients while using the app as intended.
+
+##### Telling them, and their response.
+
+This is all new territory for me. I didn't know how anything could come back at me, so after a few conversations, decided to tell the app developers as soon as possible and get that data off the market.
+
+I compiled everything into one email. Steps to recreate, required permissions, affected areas and my suggested changes, encouraging them to have a further look into their endpoints with sensitive data.
+
+<img
+  src="/dribl/driblresponse.png"
+  title="Final Response"
+  alt="A response from when I messaged them about a high severity breach. Very basic, just a thank you note."
+/>
+
+I didn't know what to expect as a response.
+
+Something with an understanding of the gravity/severity of what I've just handed them would be nice. But I guess the last thing a company wants to do is admit that.
+
+Either way, for now I can rest easier knowing my personal data is a tiny bit safer.
+
+---
+
+(*1): _I know you can go a lot further when inspecting packets from an app, but there's also a skill in recognising other avenues are of lower time cost._
