@@ -1,9 +1,11 @@
 ---
+import GoogleTagManager from "../components/GoogleTagManager.astro";
 import "../styles/wallmap-style.css";
 ---
 
 <html lang="en">
   <head>
+    <GoogleTagManager />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Night Sky Poster</title>
@@ -45,7 +47,11 @@ import "../styles/wallmap-style.css";
           <label for="location"
             >Where do you want to see your Night Sky from?</label
           >
-          <input type="text" id="locationText" value="13 Albert St, Goodwood SA" />
+          <input
+            type="text"
+            id="locationText"
+            value="13 Albert St, Goodwood SA"
+          />
           <label for="date">When did your special moment occur?</label>
           <input type="date" id="date" />
           <label for="message">Add a personal message (optional)</label>
