@@ -3,14 +3,18 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import GoogleTagManager from "../components/GoogleTagManager.astro";
+import GoogleTagManagerIFrame from "../components/GoogleTagManagerIFrame.astro";
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <GoogleTagManager />
   </head>
   <body>
+    <GoogleTagManagerIFrame />
     <Header />
     <main>
       <h1>Hey! I'm Trent</h1>
